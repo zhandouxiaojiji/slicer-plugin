@@ -5,8 +5,15 @@
   "author": "zhandouxiaojiji",
   "main": "main.js",
   "main-menu": {
-    "Packages/Hello World": {
-      "message": "slicer-plugin:say-hello"
+    "扩展/九宫格切片工具": {
+      "message": "slicer-plugin:panel"
     }
+  },
+  "panel": {
+    "main": "panel/index.js",
+    "type": "dockable",
+    "title": "九宫格切图",
+    "width": 400,
+    "height": 300
   }
 }

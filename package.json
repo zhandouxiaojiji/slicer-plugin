@@ -1,0 +1,12 @@
+{
+  "name": "slicer-plugin",
+  "version": "0.0.1",
+  "description": "sprite九宫格自动切片工具",
+  "author": "zhandouxiaojiji",
+  "main": "main.js",
+  "main-menu": {
+    "Packages/Hello World": {
+      "message": "slicer-plugin:say-hello"
+    }
+  }
+}

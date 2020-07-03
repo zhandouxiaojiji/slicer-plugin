@@ -1,44 +1,74 @@
 Editor.Panel.extend({
   style: `
     :host { margin: 5px; }
-    h2 { color: #f90; }
+    h2 { 
+      color: #f90; 
+    }
+    input {
+      width: 50;
+    }
+    .preview {
+      width: auto;
+      height: 300;
+    }
+    .input-layout {
+      height:25;
+      margin-top:10;
+      margin-bottom:10;
+    }
   `,
 
   template: `
-    <h2>九宫格</h2>
-    <img id="img"></img>
-    <ui-button id="btn">点击</ui-button>
+    <h2>保留像素</h2>
+    <div class="layout horizontal input-layout">
+      <ui-input id="width" class="big" placeholder="width"></ui-input>
+      <ui-input id="height" class="big" placeholder="height"></ui-input>
+    </div>
+    <ui-button id="btn">裁减</ui-button>
     <hr />
-    <div>状态: <span id="label">--</span></div>
-  `,
+    <img id="img" class="preview"></img>
+    `,
 
   $: {
     img: '#img',
     btn: '#btn',
     label: '#label',
+    width: '#width',
+    height: '#height',
   },
+
+  message: {
+  },
+
+  curPath: '',
 
   ready() {
     this.updateImg();
-
-    this.$btn.addEventListener('confirm', () => {
-      this.$label.innerText = '你好';
-      setTimeout(() => {
-        this.$label.innerText = '--';
-      }, 500);
-    });
+    setInterval(() => {
+      this.updateImg();
+    }, 100);
   },
 
   updateImg() {
     const uuids = Editor.Selection.curSelection('asset');
     const uuid = uuids[0];
-    Editor.log(uuid);
-    // let obj = Editor.assetdb.assetInfoByUuid(uuids[0]);
-    Editor.assetdb.queryInfoByUuid(uuid, (err, info) => { 
-      // info.path// info.url // info.type
+    if (this.curUuid == uuid) {
+      return;
+    }
+    // Editor.log(uuid);
+    Editor.assetdb.queryInfoByUuid(uuid, (err, info) => {
+      if(!info) {
+        return;
+      }
+      if(this.curPath == info.path) {
+        return;
+      }
+      this.$width.value = "10";
+      this.$height.value = "10";
+
+      this.curPath = info.path;
       Editor.log(info.path);
       this.$img.src = info.path;
     });
-    // Editor.log(obj);
   },
 });

@@ -1,5 +1,5 @@
 
-const Jimp = Editor.require("packages://slicer-plugin/core/jimp.js");
+const Slicer = Editor.require("packages://slicer-plugin/core/slicer.js");
 
 Editor.Panel.extend({
   style: `
@@ -73,29 +73,10 @@ Editor.Panel.extend({
       Editor.log(info.path);
       this.$img.src = info.path;
 
-      Jimp.read(info.path, (err, image) => {
-        Editor.log("err", err);
-        Editor.log("image", image);
-      })
-      // var Jimp = require('../jimp');
-      // Jimp.read(info.path, (err, image) => {
-      //   Editor.log("err", err);
-      //   Editor.log("image", image);
-      // })
-
-      // Editor.log("document", document);
-      // const canvas = document.createElement('canvas');
-      // Editor.log("canvas", canvas);
-      // const ctx = canvas.getContext('2d');
-      // Editor.log("ctx", ctx);
-      // img.onload = () => {
-      //   canvas.height = img.height;
-      //   canvas.width = img.width;
-      //   Editor.log(canvas.width, canvas.height);
-      //   ctx.drawImage(img, 0, 0);
-      //   var dataURL = canvas.toDataURL('image/png');
-      //   Editor.log(dataURL);
-      // };
+      (async () => {
+        const {x1, x2, y1, y2} = await Slicer.check(info.path);
+        Editor.log("check", x1, x2, y1, y2);
+      })();
     });
   },
 });

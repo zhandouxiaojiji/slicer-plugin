@@ -71,10 +71,14 @@ Editor.Panel.extend({
 
       this.curPath = info.path;
       Editor.log(info.path);
-      this.$img.src = info.path;
+      // this.$img.src = info.path;
 
       (async () => {
-        const {x1, x2, y1, y2} = await Slicer.check(info.path);
+        const rawImage = await Slicer.loadImageAsync(info.path);
+        const previewImage = Slicer.cloneImage(rawImage);
+        const {x1, x2, y1, y2} = Slicer.check(rawImage);
+        Slicer.drawPreviewLine(previewImage, x1, x2, y1, y2);
+        this.$img.src = await Slicer.getPngBase64Async(previewImage);
         Editor.log("check", x1, x2, y1, y2);
       })();
     });

@@ -24,21 +24,27 @@ Editor.Panel.extend({
   template: `
     <h2>保留像素</h2>
     <div class="layout horizontal input-layout">
-      <ui-input id="width" class="big" placeholder="width"></ui-input>
-      <ui-input id="height" class="big" placeholder="height"></ui-input>
+      <ui-input id="retain-width" class="big" placeholder="width"></ui-input>
+      <ui-input id="retain-height" class="big" placeholder="height"></ui-input>
     </div>
     <ui-button id="btn">裁减</ui-button>
     <hr />
-    <img id="img" class="preview"></img>
+    <img id="previewImg" class="preview"></img>
     `,
 
   $: {
-    img: '#img',
     btn: '#btn',
-    label: '#label',
-    width: '#width',
-    height: '#height',
+    previewImg: '#previewImg',
+    retainWidth: '#retain-width',
+    retainHeight: '#retain-height',
   },
+
+  rawImage: undefined,
+  curUuid: 0,
+  x1: 0,
+  x2: 0,
+  y1: 0,
+  y2: 0,
 
   message: {
   },
@@ -46,41 +52,78 @@ Editor.Panel.extend({
   curPath: '',
 
   ready() {
+    this.curUuid = this.getSelectUuid();
     this.updateImg();
     setInterval(() => {
-      this.updateImg();
+      if(this.curUuid != this.getSelectUuid()) {
+        this.updateImg();
+      }
     }, 100);
+
+    this.$btn.addEventListener('confirm', () => {
+      if (this.rawImage) {
+        let retain = this.getRetainRange();
+        Editor.log("cut!", retain);
+      }
+    });
+  },
+
+  getSelectUuid() {
+    const uuids = Editor.Selection.curSelection('asset');
+    return uuids[0];
   },
 
   updateImg() {
-    const uuids = Editor.Selection.curSelection('asset');
-    const uuid = uuids[0];
-    if (this.curUuid == uuid) {
+    if(!this.curUuid) {
       return;
     }
-    // Editor.log(uuid);
-    Editor.assetdb.queryInfoByUuid(uuid, (err, info) => {
+    
+    Editor.assetdb.queryInfoByUuid(this.curUuid, (err, info) => {
       if (!info) {
         return;
       }
       if (this.curPath == info.path) {
         return;
       }
-      this.$width.value = "10";
-      this.$height.value = "10";
+      this.$retainWidth.value = "10";
+      this.$retainHeight.value = "10";
 
       this.curPath = info.path;
       Editor.log(info.path);
-      // this.$img.src = info.path;
 
       (async () => {
-        const rawImage = await Slicer.loadImageAsync(info.path);
-        const previewImage = Slicer.cloneImage(rawImage);
-        const {x1, x2, y1, y2} = Slicer.check(rawImage);
-        Slicer.drawPreviewLine(previewImage, x1, x2, y1, y2);
-        this.$img.src = await Slicer.getPngBase64Async(previewImage);
-        Editor.log("check", x1, x2, y1, y2);
+        this.rawImage = await Slicer.loadImageAsync(info.path);
+        this.drawPreview(this.rawImage);
       })();
     });
   },
+
+  drawPreview(rawImage) {
+    const previewImage = Slicer.cloneImage(rawImage);
+    const { x1, x2, y1, y2 } = Slicer.check(rawImage);
+    Slicer.drawPreviewLine(previewImage, x1, x2, y1, y2);
+    Slicer.getPngBase64Async(previewImage).then((data) => {
+      this.$previewImg.src = data;
+    })
+
+    Editor.log("check", x1, x2, y1, y2);
+    this.previewImage = previewImage;
+    this.x1 = x1;
+    this.x2 = x2;
+    this.y1 = y1;
+    this.y2 = y2;
+  },
+
+  getRetainRange() {
+    let width = this.$retainWidth.value;
+    let height = this.$retainHeight.value;
+    return {
+      width: parseInt(width),
+      height: parseInt(height),
+    }
+  },
+
+  cutImage() {
+
+  }
 });

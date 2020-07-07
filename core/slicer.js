@@ -1,3 +1,5 @@
+'use strict';
+
 const Jimp = require("jimp");
 
 const checkPixel = (p1, p2) => {
@@ -42,8 +44,11 @@ exports.cloneImage = (image) => {
 }
 
 exports.check = (image) => {
-  let x1, x2, y1, y2;
-  Editor.log("check image", image.bitmap);
+  let x1 = 0;
+  let x2 = 0;
+  let y1 = 0;
+  let y2 = 0;
+  // Editor.log("check image", image.bitmap);
   const bitmap = image.bitmap;
   let width = bitmap.width;
   let height = bitmap.height;
@@ -128,4 +133,49 @@ exports.drawPreviewLine = (image, x1, x2, y1, y2) => {
     image.setPixelColor(hex, x1, y);
     image.setPixelColor(hex, x2, y);
   }
+}
+
+exports.cutImage = async (rawImage, x1, x2, y1, y2, retainWidth, retainHeight, path) => {
+  const rawWidth = rawImage.bitmap.width;
+  const rawHeight = rawImage.bitmap.height;
+  if (x1 > x2) {
+    x1 = Math.floor(rawWidth);
+    x2 = x1;
+  }
+  if (y1 > y2) {
+    y1 = Math.floor(rawHeight);
+    y2 = y1;
+  }
+  var newWidth = x1 + (rawWidth - x2) + retainWidth;
+  var newHeight = y1 + (rawHeight - y2) + retainHeight;
+  if (newWidth > rawWidth) {
+    newWidth = rawWidth;
+  }
+  if (newHeight > rawHeight) {
+    newHeight = rawHeight;
+  }
+  Editor.log("cut image", x1, x2, y1, y2, retainWidth, retainHeight, newWidth, newHeight);
+  return new Promise((resolve, reject) => {
+    new Jimp(newWidth, newHeight, (err, newImage) => {
+      Editor.log("newImage", err, newImage);
+      for (let x = 0; x < newWidth; x++) {
+        for (let y = 0; y < newHeight; y++) {
+          let rawX, rawY;
+          if (x >= rawWidth - x2) {
+            rawX = x + rawWidth - newWidth;
+          } else {
+            rawX = x;
+          }
+          if (y >= rawHeight - y2) {
+            rawY = y + rawHeight - newHeight;
+          } else {
+            rawY = y;
+          }
+          Editor.log(rawX, rawY, "=>", x, y);
+          newImage.setPixelColor(x, y, rawImage.getPixelColor(rawX, rawY));
+        }
+      }
+      resolve(newImage);
+    });
+  });
 }

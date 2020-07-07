@@ -1,3 +1,4 @@
+'use strict';
 
 const Slicer = Editor.require("packages://slicer-plugin/core/slicer.js");
 
@@ -55,16 +56,13 @@ Editor.Panel.extend({
     this.curUuid = this.getSelectUuid();
     this.updateImg();
     setInterval(() => {
-      if(this.curUuid != this.getSelectUuid()) {
+      if (this.curUuid != this.getSelectUuid()) {
         this.updateImg();
       }
     }, 100);
 
     this.$btn.addEventListener('confirm', () => {
-      if (this.rawImage) {
-        let retain = this.getRetainRange();
-        Editor.log("cut!", retain);
-      }
+      this.cutImage();
     });
   },
 
@@ -74,10 +72,10 @@ Editor.Panel.extend({
   },
 
   updateImg() {
-    if(!this.curUuid) {
+    if (!this.curUuid) {
       return;
     }
-    
+
     Editor.assetdb.queryInfoByUuid(this.curUuid, (err, info) => {
       if (!info) {
         return;
@@ -106,7 +104,7 @@ Editor.Panel.extend({
       this.$previewImg.src = data;
     })
 
-    Editor.log("check", x1, x2, y1, y2);
+    Editor.log("check", x1, x2, y1, y2, data);
     this.previewImage = previewImage;
     this.x1 = x1;
     this.x2 = x2;
@@ -124,6 +122,15 @@ Editor.Panel.extend({
   },
 
   cutImage() {
-
+    if (!this.rawImage) {
+      return;
+    }
+    const retain = this.getRetainRange();
+    Slicer.cutImage(this.rawImage, this.x1, this.x2, this.y1,
+      this.y2, retain.width, retain.height, this.curPath).then((newImage) => {
+        Editor.log("new", newImage);
+        this.rawImage = newImage;
+        this.drawPreview(newImage);
+      });
   }
 });

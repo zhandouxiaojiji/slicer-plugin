@@ -163,7 +163,7 @@ exports.cutImage = async (rawImage, left, right, bottom, top, retainWidth, retai
   if (newHeight > rawHeight) {
     newHeight = rawHeight;
   }
-  Editor.log("cut image", x1, x2, y1, y2, retainWidth, retainHeight, newWidth, newHeight);
+  // Editor.log("cut image", x1, x2, y1, y2, retainWidth, retainHeight, newWidth, newHeight);
   return new Promise((resolve, reject) => {
     new Jimp(newWidth, newHeight, (err, newImage) => {
       for (let x = 0; x < newWidth; x++) {

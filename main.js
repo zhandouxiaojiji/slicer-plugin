@@ -12,9 +12,7 @@ module.exports = {
   messages: {
     'slicer-plugin:panel'() {
       const uuids = Editor.Selection.curSelection('asset');
-      Editor.log(uuids[0]);
       let obj = Editor.assetdb.assetInfoByUuid(uuids[0]);
-      Editor.log(obj);
       Editor.Panel.open('slicer-plugin');
     }
   },

@@ -26,19 +26,24 @@ Editor.Panel.extend({
   template: `
     <h2>当前尺寸</h2>
     <h3 id="sizeLabel"></h3>
+    <h2>边界</h2>
+    <h3 id="borderLabel"></h3>
     <h2>保留像素</h2>
     <div class="layout horizontal input-layout">
       <ui-input id="retain-width" class="big" placeholder="width"></ui-input>
       <ui-input id="retain-height" class="big" placeholder="height"></ui-input>
     </div>
-    <ui-button id="btn">裁减</ui-button>
+    <ui-button id="sliceBtn">设置九宫格</ui-button>
+    <ui-button id="cutBtn">裁切并设置九宫格</ui-button>
     <hr />
     <img id="previewImg" class="preview"></img>
     `,
 
   $: {
-    btn: '#btn',
+    cutBtn: '#cutBtn',
+    sliceBtn: '#sliceBtn',
     sizeLabel: '#sizeLabel',
+    borderLabel: '#borderLabel',
     previewImg: '#previewImg',
     retainWidth: '#retain-width',
     retainHeight: '#retain-height',
@@ -64,9 +69,17 @@ Editor.Panel.extend({
       }
     }, 100);
 
-    this.$btn.addEventListener('confirm', () => {
+    this.$cutBtn.addEventListener('confirm', () => {
       this.cutImage();
+      this.changeMeta();
+      // Editor.assetdb.refresh(this.curPath);
+      // Editor.log("cut done!");
     });
+
+    this.$sliceBtn.addEventListener('click', () => {
+      this.changeMeta();
+      // Editor.assetdb.refresh(this.curPath);
+    })
   },
 
   getSelectUuid() {
@@ -88,10 +101,7 @@ Editor.Panel.extend({
       }
       this.$retainWidth.value = "10";
       this.$retainHeight.value = "10";
-
       this.curPath = info.path;
-      Editor.log(info.path);
-
       (async () => {
         this.rawImage = await Slicer.loadImageAsync(info.path);
         this.drawPreview();
@@ -103,13 +113,14 @@ Editor.Panel.extend({
     const rawImage = this.rawImage;
     const previewImage = Slicer.cloneImage(rawImage);
     const sliced = Slicer.check(rawImage);
-    Editor.log("check", sliced);
+    // Editor.log("check", sliced);
     this.sliced = sliced;
     Slicer.drawPreviewLine(previewImage, sliced.left, sliced.right, sliced.bottom, sliced.top);
     Slicer.getPngBase64Async(previewImage).then((data) => {
       this.$previewImg.src = data;
     });
-    this.changeMeta();
+    this.$sizeLabel.innerText = `${rawImage.bitmap.width} * ${rawImage.bitmap.height}`;
+    this.$borderLabel.innerText = `上:${sliced.top}px 下:${sliced.bottom}px 左:${sliced.left}px 右:${sliced.right}px`
   },
 
   getRetainRange() {
@@ -135,14 +146,18 @@ Editor.Panel.extend({
   },
 
   changeMeta() {
-    const sliced = this.sliced;
-    const metaPath = this.curPath + ".meta";
-    const meta = JSON.parse(fs.readFileSync(metaPath));
-    const border = meta.subMetas.border;
-    border.borderLeft = sliced.left;
-    border.borderRight = sliced.right;
-    border.borderBottom = sliced.bottom;
-    border.borderTop = sliced.top;
-    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+    if (!this.curUuid) {
+      return;
+    }
+    Editor.assetdb.queryMetaInfoByUuid(this.curUuid, (err, info) => {
+      const sliced = this.sliced;
+      const meta = JSON.parse(info.json);
+      const border = meta.subMetas.border;
+      border.borderLeft = sliced.left;
+      border.borderRight = sliced.right;
+      border.borderBottom = sliced.bottom;
+      border.borderTop = sliced.top;
+      Editor.assetdb.saveMeta(this.curUuid, JSON.stringify(meta, null, 2));
+    });
   }
 });

@@ -44,10 +44,10 @@ exports.cloneImage = (image) => {
 }
 
 exports.check = (image) => {
-  let x1 = 0;
-  let x2 = 0;
-  let y1 = 0;
-  let y2 = 0;
+  let left = 0;
+  let right = 0;
+  let bottom = 0;
+  let top = 0;
   // Editor.log("check image", image.bitmap);
   const bitmap = image.bitmap;
   let width = bitmap.width;
@@ -66,7 +66,7 @@ exports.check = (image) => {
       }
     }
     if (!same) {
-      x1 = x;
+      left = x;
       break;
     }
   }
@@ -82,7 +82,7 @@ exports.check = (image) => {
       }
     }
     if (!same) {
-      x2 = x;
+      right = width - x;
       break;
     }
   }
@@ -98,7 +98,7 @@ exports.check = (image) => {
       }
     }
     if (!same) {
-      y1 = y;
+      bottom = y;
       break;
     }
   }
@@ -114,35 +114,39 @@ exports.check = (image) => {
       }
     }
     if (!same) {
-      y2 = y;
+      top = height - y;
       break;
     }
   }
-  return { x1, x2, y1, y2 };
+  return { left, right, bottom, top };
 }
 
-exports.drawPreviewLine = (image, x1, x2, y1, y2) => {
-  // const hex = 0x00ff0099;
-  const hex = 0x00ff0000;
+exports.drawPreviewLine = (image, left, right, bottom, top) => {
+  const hex = 0x00ff0099;
+  // const hex = 0x00ff0000;
   const width = image.bitmap.width;
   const height = image.bitmap.height;
   for (let x = 0; x < width; x++) {
-    image.setPixelColor(hex, x, y1);
-    image.setPixelColor(hex, x, y1 + 1);
-    image.setPixelColor(hex, x, y2);
-    image.setPixelColor(hex, x, y2 - 1);
+    image.setPixelColor(hex, x, bottom);
+    image.setPixelColor(hex, x, bottom + 1);
+    image.setPixelColor(hex, x, height - top);
+    image.setPixelColor(hex, x, height - top - 1);
   }
   for (let y = 0; y < height; y++) {
-    image.setPixelColor(hex, x1, y);
-    image.setPixelColor(hex, x1 + 1, y);
-    image.setPixelColor(hex, x2, y);
-    image.setPixelColor(hex, x2 - 1, y);
+    image.setPixelColor(hex, left, y);
+    image.setPixelColor(hex, left + 1, y);
+    image.setPixelColor(hex, width - right, y);
+    image.setPixelColor(hex, width - right - 1, y);
   }
 }
 
-exports.cutImage = async (rawImage, x1, x2, y1, y2, retainWidth, retainHeight, path) => {
+exports.cutImage = async (rawImage, left, right, bottom, top, retainWidth, retainHeight, path) => {
   const rawWidth = rawImage.bitmap.width;
   const rawHeight = rawImage.bitmap.height;
+  var x1 = left;
+  var x2 = rawWidth - right;
+  var y1 = bottom;
+  var y2 = rawHeight - top;
   if (x1 > x2) {
     x1 = Math.floor(rawWidth);
     x2 = x1;

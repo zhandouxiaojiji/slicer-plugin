@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const Slicer = Editor.require("packages://slicer-plugin/core/slicer.js");
 
 Editor.Panel.extend({
@@ -23,6 +24,8 @@ Editor.Panel.extend({
   `,
 
   template: `
+    <h2>当前尺寸</h2>
+    <h3 id="sizeLabel"></h3>
     <h2>保留像素</h2>
     <div class="layout horizontal input-layout">
       <ui-input id="retain-width" class="big" placeholder="width"></ui-input>
@@ -35,6 +38,7 @@ Editor.Panel.extend({
 
   $: {
     btn: '#btn',
+    sizeLabel: '#sizeLabel',
     previewImg: '#previewImg',
     retainWidth: '#retain-width',
     retainHeight: '#retain-height',
@@ -90,20 +94,22 @@ Editor.Panel.extend({
 
       (async () => {
         this.rawImage = await Slicer.loadImageAsync(info.path);
-        this.drawPreview(this.rawImage);
+        this.drawPreview();
       })();
     });
   },
 
-  drawPreview(rawImage) {
+  drawPreview() {
+    const rawImage = this.rawImage;
     const previewImage = Slicer.cloneImage(rawImage);
     const sliced = Slicer.check(rawImage);
+    Editor.log("check", sliced);
     this.sliced = sliced;
-    Slicer.drawPreviewLine(previewImage, sliced.x1, sliced.x2, sliced.y1, sliced.y2);
+    Slicer.drawPreviewLine(previewImage, sliced.left, sliced.right, sliced.bottom, sliced.top);
     Slicer.getPngBase64Async(previewImage).then((data) => {
       this.$previewImg.src = data;
-    })
-    Editor.log("check", sliced);
+    });
+    this.changeMeta();
   },
 
   getRetainRange() {
@@ -121,12 +127,22 @@ Editor.Panel.extend({
     }
     const retain = this.getRetainRange();
     const sliced = this.sliced;
-    Editor.log("#### before cut", sliced);
-    Slicer.cutImage(this.rawImage, sliced.x1, sliced.x2, sliced.y1,
-      sliced.y2, retain.width, retain.height, this.curPath).then((newImage) => {
-        Editor.log("new", newImage);
+    Slicer.cutImage(this.rawImage, sliced.left, sliced.right, sliced.bottom,
+      sliced.top, retain.width, retain.height, this.curPath).then((newImage) => {
         this.rawImage = newImage;
-        this.drawPreview(newImage);
+        this.drawPreview();
       });
+  },
+
+  changeMeta() {
+    const sliced = this.sliced;
+    const metaPath = this.curPath + ".meta";
+    const meta = JSON.parse(fs.readFileSync(metaPath));
+    const border = meta.subMetas.border;
+    border.borderLeft = sliced.left;
+    border.borderRight = sliced.right;
+    border.borderBottom = sliced.bottom;
+    border.borderTop = sliced.top;
+    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
   }
 });

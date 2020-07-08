@@ -42,10 +42,7 @@ Editor.Panel.extend({
 
   rawImage: undefined,
   curUuid: 0,
-  x1: 0,
-  x2: 0,
-  y1: 0,
-  y2: 0,
+  sliced: undefined,
 
   message: {
   },
@@ -56,7 +53,9 @@ Editor.Panel.extend({
     this.curUuid = this.getSelectUuid();
     this.updateImg();
     setInterval(() => {
-      if (this.curUuid != this.getSelectUuid()) {
+      let uuid = this.getSelectUuid()
+      if (this.curUuid != uuid) {
+        this.curUuid = uuid;
         this.updateImg();
       }
     }, 100);
@@ -98,18 +97,13 @@ Editor.Panel.extend({
 
   drawPreview(rawImage) {
     const previewImage = Slicer.cloneImage(rawImage);
-    const { x1, x2, y1, y2 } = Slicer.check(rawImage);
-    Slicer.drawPreviewLine(previewImage, x1, x2, y1, y2);
+    const sliced = Slicer.check(rawImage);
+    this.sliced = sliced;
+    Slicer.drawPreviewLine(previewImage, sliced.x1, sliced.x2, sliced.y1, sliced.y2);
     Slicer.getPngBase64Async(previewImage).then((data) => {
       this.$previewImg.src = data;
     })
-
-    Editor.log("check", x1, x2, y1, y2, data);
-    this.previewImage = previewImage;
-    this.x1 = x1;
-    this.x2 = x2;
-    this.y1 = y1;
-    this.y2 = y2;
+    Editor.log("check", sliced);
   },
 
   getRetainRange() {
@@ -126,8 +120,10 @@ Editor.Panel.extend({
       return;
     }
     const retain = this.getRetainRange();
-    Slicer.cutImage(this.rawImage, this.x1, this.x2, this.y1,
-      this.y2, retain.width, retain.height, this.curPath).then((newImage) => {
+    const sliced = this.sliced;
+    Editor.log("#### before cut", sliced);
+    Slicer.cutImage(this.rawImage, sliced.x1, sliced.x2, sliced.y1,
+      sliced.y2, retain.width, retain.height, this.curPath).then((newImage) => {
         Editor.log("new", newImage);
         this.rawImage = newImage;
         this.drawPreview(newImage);

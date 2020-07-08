@@ -122,16 +122,21 @@ exports.check = (image) => {
 }
 
 exports.drawPreviewLine = (image, x1, x2, y1, y2) => {
-  const hex = 0x00ff0099;
+  // const hex = 0x00ff0099;
+  const hex = 0x00ff0000;
   const width = image.bitmap.width;
   const height = image.bitmap.height;
   for (let x = 0; x < width; x++) {
     image.setPixelColor(hex, x, y1);
+    image.setPixelColor(hex, x, y1 + 1);
     image.setPixelColor(hex, x, y2);
+    image.setPixelColor(hex, x, y2 - 1);
   }
   for (let y = 0; y < height; y++) {
     image.setPixelColor(hex, x1, y);
+    image.setPixelColor(hex, x1 + 1, y);
     image.setPixelColor(hex, x2, y);
+    image.setPixelColor(hex, x2 - 1, y);
   }
 }
 
@@ -157,7 +162,6 @@ exports.cutImage = async (rawImage, x1, x2, y1, y2, retainWidth, retainHeight, p
   Editor.log("cut image", x1, x2, y1, y2, retainWidth, retainHeight, newWidth, newHeight);
   return new Promise((resolve, reject) => {
     new Jimp(newWidth, newHeight, (err, newImage) => {
-      Editor.log("newImage", err, newImage);
       for (let x = 0; x < newWidth; x++) {
         for (let y = 0; y < newHeight; y++) {
           let rawX, rawY;
@@ -171,11 +175,12 @@ exports.cutImage = async (rawImage, x1, x2, y1, y2, retainWidth, retainHeight, p
           } else {
             rawY = y;
           }
-          Editor.log(rawX, rawY, "=>", x, y);
-          newImage.setPixelColor(x, y, rawImage.getPixelColor(rawX, rawY));
+          newImage.setPixelColor(rawImage.getPixelColor(rawX, rawY), x, y);
         }
       }
-      resolve(newImage);
+      newImage.write(path, () => {
+        resolve(newImage);
+      })
     });
   });
 }

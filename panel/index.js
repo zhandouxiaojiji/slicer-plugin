@@ -72,13 +72,10 @@ Editor.Panel.extend({
     this.$cutBtn.addEventListener('confirm', () => {
       this.cutImage();
       this.changeMeta();
-      // Editor.assetdb.refresh(this.curPath);
-      // Editor.log("cut done!");
     });
 
     this.$sliceBtn.addEventListener('click', () => {
       this.changeMeta();
-      // Editor.assetdb.refresh(this.curPath);
     })
   },
 
@@ -111,9 +108,11 @@ Editor.Panel.extend({
 
   drawPreview() {
     const rawImage = this.rawImage;
+    if(!rawImage) {
+      return;
+    }
     const previewImage = Slicer.cloneImage(rawImage);
     const sliced = Slicer.check(rawImage);
-    // Editor.log("check", sliced);
     this.sliced = sliced;
     Slicer.drawPreviewLine(previewImage, sliced.left, sliced.right, sliced.bottom, sliced.top);
     Slicer.getPngBase64Async(previewImage).then((data) => {
@@ -146,17 +145,18 @@ Editor.Panel.extend({
   },
 
   changeMeta() {
-    if (!this.curUuid) {
+    if (!this.curUuid || !this.sliced) {
       return;
     }
     Editor.assetdb.queryMetaInfoByUuid(this.curUuid, (err, info) => {
       const sliced = this.sliced;
       const meta = JSON.parse(info.json);
-      const border = meta.subMetas.border;
-      border.borderLeft = sliced.left;
-      border.borderRight = sliced.right;
-      border.borderBottom = sliced.bottom;
-      border.borderTop = sliced.top;
+      meta.subMetas.border = {
+        borderLeft : sliced.left,
+        borderRight : sliced.right,
+        borderBottom : sliced.bottom,
+        borderTop : sliced.top,
+      }
       Editor.assetdb.saveMeta(this.curUuid, JSON.stringify(meta, null, 2));
     });
   }

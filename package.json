@@ -1,6 +1,6 @@
 {
   "name": "slicer-plugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "sprite九宫格自动切片工具",
   "author": "zhandouxiaojiji",
   "main": "main.js",

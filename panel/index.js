@@ -33,8 +33,8 @@ Editor.Panel.extend({
       <ui-input id="retain-width" class="big" placeholder="width"></ui-input>
       <ui-input id="retain-height" class="big" placeholder="height"></ui-input>
     </div>
+    <ui-button id="cutBtn">裁切</ui-button>
     <ui-button id="sliceBtn">设置九宫格</ui-button>
-    <ui-button id="cutBtn">裁切并设置九宫格</ui-button>
     <hr />
     <img id="previewImg" class="preview"></img>
     `,
@@ -71,7 +71,7 @@ Editor.Panel.extend({
 
     this.$cutBtn.addEventListener('confirm', () => {
       this.cutImage();
-      this.changeMeta();
+      // this.changeMeta();
     });
 
     this.$sliceBtn.addEventListener('click', () => {
@@ -108,7 +108,7 @@ Editor.Panel.extend({
 
   drawPreview() {
     const rawImage = this.rawImage;
-    if(!rawImage) {
+    if (!rawImage) {
       return;
     }
     const previewImage = Slicer.cloneImage(rawImage);
@@ -150,12 +150,36 @@ Editor.Panel.extend({
     }
     Editor.assetdb.queryMetaInfoByUuid(this.curUuid, (err, info) => {
       const sliced = this.sliced;
+      const rawImage = this.rawImage;
       const meta = JSON.parse(info.json);
+
+      var left = sliced.left;
+      var right = sliced.right;
+      var bottom = sliced.bottom;
+      var top = sliced.top;
+      if(left + right >= rawImage.bitmap.width) {
+        left = 0;
+        right = 0;
+      }
+      if(bottom + top >= rawImage.bitmap.height) {
+        bottom = 0;
+        top = 0;
+      }
+
+      for (let k in meta.subMetas) {
+        let v = meta.subMetas[k];
+        if (v.subMetas) {
+          v.borderLeft = left;
+          v.borderRight = right;
+          v.borderBottom = bottom;
+          v.borderTop = top;
+        }
+      }
       meta.subMetas.border = {
-        borderLeft : sliced.left,
-        borderRight : sliced.right,
-        borderBottom : sliced.bottom,
-        borderTop : sliced.top,
+        borderLeft: left,
+        borderRight: right,
+        borderBottom: bottom,
+        borderTop: top,
       }
       Editor.assetdb.saveMeta(this.curUuid, JSON.stringify(meta, null, 2));
     });

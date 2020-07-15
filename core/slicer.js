@@ -118,12 +118,30 @@ exports.check = (image) => {
       break;
     }
   }
+  if (left > right) {
+    right = left;
+  } else {
+    left = right;
+  }
+  if (bottom > top) {
+    top = bottom;
+  } else {
+    bottom = top;
+  }
+  if(left * 2 > width) {
+    left = Math.ceil(width/2);
+    right = left;
+  }
+  if(bottom * 2 > height) {
+    bottom = Math.ceil(height/2);
+    top = bottom;
+  }
   return { left, right, bottom, top };
 }
 
 exports.drawPreviewLine = (image, left, right, bottom, top) => {
-  const hex = 0x00ff0099;
-  // const hex = 0x00ff0000;
+  // const hex = 0x00ff0099;
+  const hex = 0x00ff0000;
   const width = image.bitmap.width;
   const height = image.bitmap.height;
   for (let x = 0; x < width; x++) {
@@ -163,25 +181,24 @@ exports.cutImage = async (rawImage, left, right, bottom, top, retainWidth, retai
   if (newHeight > rawHeight) {
     newHeight = rawHeight;
   }
-  // Editor.log("cut image", x1, x2, y1, y2, retainWidth, retainHeight, newWidth, newHeight);
+
+  // Editor.log("cut image", {x1, x2, y1, y2, retainWidth, retainHeight, newWidth, newHeight, rawWidth, rawHeight});
   return new Promise((resolve, reject) => {
     new Jimp(newWidth, newHeight, (err, newImage) => {
       for (let x = 0; x < newWidth; x++) {
         for (let y = 0; y < newHeight; y++) {
-          let rawX, rawY;
-          if (x >= rawWidth - x2) {
-            rawX = x + rawWidth - newWidth;
-          } else {
-            rawX = x;
+          let rawX = x;
+          let rawY = y;
+          if(x >= newWidth - right) {
+            rawX = rawWidth - (newWidth - x);
           }
-          if (y >= rawHeight - y2) {
-            rawY = y + rawHeight - newHeight;
-          } else {
-            rawY = y;
+          if(y >= newHeight - top) {
+            rawY = rawHeight - (newHeight - y);
           }
           newImage.setPixelColor(rawImage.getPixelColor(rawX, rawY), x, y);
         }
       }
+    
       newImage.write(path, () => {
         resolve(newImage);
       })
